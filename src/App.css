@@ -1,0 +1,57 @@
+/**
+ * App.css - 应用程序主样式文件
+ * 包含全局样式、布局和动画效果
+ */
+
+/* 根元素的基本样式：居中布局、最大宽度和内边距 */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Logo图标的基本样式：大小、内边距和过渡动画 */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter; /* 优化渲染性能 */
+  transition: filter 300ms;
+}
+
+/* Logo悬停时的滤镜效果 */
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+/* React Logo特定的悬停效果 */
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+/* Logo旋转动画定义：从0度到360度旋转 */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 适配用户动画偏好设置：为第二个Logo添加无限旋转动画 */
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* 卡片组件的内边距样式 */
+.card {
+  padding: 2em;
+}
+
+/* “阅读文档”文字的颜色样式 */
+.read-the-docs {
+  color: #888;
+}
