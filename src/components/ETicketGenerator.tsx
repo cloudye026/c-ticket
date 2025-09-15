@@ -70,6 +70,27 @@ const handlePrint = () => {
   window.print();
 };
 
+// 生成PDF文件名
+const generatePDFFileName = (flightData: FormattedFlightData): string => {
+  if (!flightData.segments || flightData.segments.length === 0) {
+    return `${flightData.passengerName || "unknown"}-电子客票行程单.pdf`;
+  }
+
+  const firstSegment = flightData.segments[0];
+
+  // 提取日期 (MM月DD日 格式中的月日)
+  const dateMatch = firstSegment.date?.match(/(\d{2})月(\d{2})日/);
+  const flightDate = dateMatch ? `${dateMatch[1]}${dateMatch[2]}` : "";
+
+  // 提取出发地和目的地三字代码
+  const originCode = firstSegment.origin?.match(/([A-Z]{3})-/)?.[1] || "";
+  const destCode = firstSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
+
+  const passengerName = flightData.passengerName || "unknown";
+
+  return `${flightDate} ${originCode}-${destCode} ${passengerName}-电子客票行程单.pdf`;
+};
+
 const pdfStyles = StyleSheet.create({
   page: {
     flexDirection: "column",
@@ -128,7 +149,7 @@ const pdfStyles = StyleSheet.create({
     // border: "2px solid #000",
     borderTop: "2px solid #CCC",
     // borderBottom: "1px solid #CCC",
-    paddingBottom: 15,
+    paddingBottom: 10,
     // marginBottom: 15,
   },
   tableHeader: {
@@ -143,7 +164,7 @@ const pdfStyles = StyleSheet.create({
     fontSize: 9,
   },
   tableCell: {
-    padding: 6,
+    padding: 2,
     // borderBottom: "1px solid #ccc",
     // borderRight: "1px solid #000",
     textAlign: "center",
@@ -151,7 +172,7 @@ const pdfStyles = StyleSheet.create({
     alignItems: "center",
   },
   tableCellLast: {
-    padding: 6,
+    padding: 2,
     borderBottom: "1px solid #ccc",
     textAlign: "center",
     justifyContent: "center",
@@ -267,11 +288,15 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
         {flightData.segments &&
           flightData.segments.length > 0 &&
           flightData.segments.map((segment, index) => (
-            <View
-              key={index}
-              style={pdfStyles.tableRow}
-            >
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOrigin]}>
+            <View key={index} style={pdfStyles.tableRow}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOrigin,
+                ]}
+              >
                 <Text>
                   {formatAirportCode(segment.origin || "")?.split("\n")[0] ||
                     ""}
@@ -288,10 +313,24 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                   )[1] || ""}
                 </Text>
               </View>
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>{segment.flightNumber || ""}</Text>
               </View>
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>
                   {classMapping[segment.flightClass]?.chinese ||
                     segment.flightClass ||
@@ -302,26 +341,61 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                     ""}
                 </Text>
               </View>
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>
                   {segment.date?.split("\n")[0] || ""}
                   {"\n"}
                   {segment.date?.split("\n")[1] || ""}
                 </Text>
               </View>
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>{segment.depTime || ""}</Text>
               </View>
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>{segment.arrTime || ""}</Text>
               </View>
               {/* 托运行李 */}
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>{segment.baggage || ""}</Text>
               </View>
-              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View
+                style={[
+                  index === flightData.segments.length - 1
+                    ? pdfStyles.tableCellLast
+                    : pdfStyles.tableCell,
+                  pdfStyles.tableColOther,
+                ]}
+              >
                 <Text>
-                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
+                  {segment.terminal1 || "-"}    {segment.terminal2 || "-"}
                 </Text>
               </View>
             </View>
@@ -957,16 +1031,7 @@ const ETicketGenerator: React.FC = () => {
                   {flightData && (
                     <PDFDownloadLink
                       document={<ETicketPDF flightData={flightData} />}
-                      fileName={`电子客票-${
-                        flightData.passengerName || "unknown"
-                      }-${
-                        flightData.segments && flightData.segments.length > 0
-                          ? flightData.segments
-                              .map((s) => s.flightNumber || "")
-                              .filter(Boolean)
-                              .join("-") || "flight"
-                          : "flight"
-                      }.pdf`}
+                      fileName={generatePDFFileName(flightData)}
                       style={{ textDecoration: "none" }}
                     >
                       {({ loading, error }) => {
