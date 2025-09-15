@@ -25,6 +25,13 @@ import {
 } from "@react-pdf/renderer";
 import "./ETicketGenerator.css";
 import iataLogo from "../images/IATA.jpg";
+import {
+  classMapping,
+  terminalOptions,
+  baggageOptions,
+} from "../data/flightConstants";
+import { airlineMapping, airlineOptions } from "../data/airlineData";
+import { flatAirportOptions, type AirportOption } from "../data/airportData";
 
 // 使用本地思源黑体字体
 Font.register({
@@ -57,104 +64,6 @@ const formatAirportCode = (airportInfo: string) => {
 //   }
 //   return airlineInfo;
 // };
-
-// 舱位映射
-const classMapping: { [key: string]: { chinese: string; english: string } } = {
-  Y: { chinese: "经济舱", english: "ECONOMY" },
-  C: { chinese: "公务舱", english: "BUSINESS" },
-};
-
-// 国内航站楼选项
-const terminalOptions = [
-  { value: "-", label: "-" },
-  { value: "T1", label: "T1" },
-  { value: "T2", label: "T2" },
-  { value: "T3", label: "T3" },
-  { value: "T4", label: "T4" },
-  { value: "T5", label: "T5" },
-  { value: "T3A", label: "T3A" },
-  { value: "大兴机场", label: "大兴机场" },
-  { value: "虹桥T1", label: "虹桥T1" },
-  { value: "虹桥T2", label: "虹桥T2" },
-  { value: "浦东T1", label: "浦东T1" },
-  { value: "浦东T2", label: "浦东T2" },
-  { value: "白云T1", label: "白云T1" },
-  { value: "白云T2", label: "白云T2" },
-  { value: "宝安T3", label: "宝安T3" },
-  { value: "双流T1", label: "双流T1" },
-  { value: "双流T2", label: "双流T2" },
-  { value: "天河T1", label: "天河T1" },
-  { value: "天河T2", label: "天河T2" },
-  { value: "长水", label: "长水" },
-  { value: "咸阳T1", label: "咸阳T1" },
-  { value: "咸阳T2", label: "咸阳T2" },
-  { value: "咸阳T3", label: "咸阳T3" },
-];
-
-// 托运行李选项
-const baggageOptions = [
-  { value: "-", label: "-" },
-  { value: "5KG", label: "5KG" },
-  { value: "10KG", label: "10KG" },
-  { value: "15KG", label: "15KG" },
-  { value: "20KG", label: "20KG" },
-  { value: "25KG", label: "25KG" },
-  { value: "30KG", label: "30KG" },
-  { value: "35KG", label: "35KG" },
-  { value: "40KG", label: "40KG" },
-  { value: "45KG", label: "45KG" },
-  { value: "50KG", label: "50KG" },
-  { value: "1PC", label: "1PC" },
-  { value: "2PC", label: "2PC" },
-  { value: "3PC", label: "3PC" },
-  { value: "23KG", label: "23KG" },
-];
-
-// 航空公司映射
-const airlineMapping: { [key: string]: string } = {
-  中国国航: "AIR CHINA",
-  中华航空: "CHINA AIRLINES",
-  东方航空: "CHINA EASTERN",
-  南方航空: "CHINA SOUTHERN",
-  海南航空: "HAINAN AIRLINES",
-  厦门航空: "XIAMEN AIR",
-  深圳航空: "SHENZHEN AIRLINES",
-  山东航空: "SHANDONG AIRLINES",
-  四川航空: "SICHUAN AIRLINES",
-  天津航空: "TIANJIN AIRLINES",
-  春秋航空: "SPRING AIRLINES",
-  吉祥航空: "JUNEYAO AIRLINES",
-  华夏航空: "CHINA EXPRESS",
-  西部航空: "WEST AIR",
-  联合航空: "CHINA UNITED AIRLINES",
-  河北航空: "HEBEI AIRLINES",
-  长龙航空: "LOONG AIR",
-  奥凯航空: "OKAY AIRWAYS",
-  首都航空: "BEIJING CAPITAL AIRLINES",
-  江西航空: "JIANGXI AIR",
-  九元航空: "9 AIR",
-  中国货运航空: "AIR CHINA CARGO",
-  东海航空: "DONGHAI AIRLINES",
-  祥鹏航空: "LUCKY AIR",
-  西藏航空: "TIBET AIRLINES",
-  昆明航空: "KUNMING AIRLINES",
-  福州航空: "FUZHOU AIRLINES",
-  北部湾航空: "GX AIRLINES",
-  青岛航空: "QINGDAO AIRLINES",
-  桂林航空: "GUILIN AIRLINES",
-  乌鲁木齐航空: "URUMQI AIR",
-  成都航空: "CHENGDU AIRLINES",
-  江南航空: "JIANGNAN AIRLINES",
-  长安航空: "CHANGAN AIRLINES",
-  中国联合航空: "CHINA UNITED AIRLINES",
-  瑞丽航空: "RUILI AIRLINES",
-};
-
-// 航空公司选项数组
-const airlineOptions = Object.keys(airlineMapping).map((airline) => ({
-  value: airline,
-  label: airline,
-}));
 
 // 添加浏览器打印功能
 const handlePrint = () => {
@@ -225,7 +134,7 @@ const pdfStyles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     // backgroundColor: "#f5f5f5",
-    // borderBottom: "2px solid #000",
+    borderBottom: "1px solid #ccc",
     fontWeight: "bold",
     fontSize: 8,
   },
@@ -235,7 +144,7 @@ const pdfStyles = StyleSheet.create({
   },
   tableCell: {
     padding: 8,
-    borderBottom: "1px solid #ccc",
+    // borderBottom: "1px solid #ccc",
     // borderRight: "1px solid #000",
     textAlign: "center",
     justifyContent: "center",
@@ -501,6 +410,27 @@ const ETicketGenerator: React.FC = () => {
   const [showTicket, setShowTicket] = useState(false);
   const [airlineSearchOptions, setAirlineSearchOptions] =
     useState(airlineOptions);
+  const [airportSearchOptions, setAirportSearchOptions] =
+    useState<AirportOption[]>(flatAirportOptions);
+
+  // 处理机场搜索
+  const handleAirportSearch = (value: string) => {
+    if (!value) {
+      setAirportSearchOptions(flatAirportOptions);
+      return;
+    }
+
+    const searchValue = value.toLowerCase();
+    const filteredOptions = flatAirportOptions.filter(
+      (option) =>
+        option.searchText.includes(searchValue) ||
+        option.code.toLowerCase().includes(searchValue) ||
+        option.city.includes(value) ||
+        option.name.includes(value) ||
+        option.pinyin.toLowerCase().includes(searchValue)
+    );
+    setAirportSearchOptions(filteredOptions);
+  };
 
   // 处理航空公司搜索
   const handleAirlineSearch = (value: string) => {
@@ -865,11 +795,23 @@ const ETicketGenerator: React.FC = () => {
                     <div className="form-grid">
                       <Form.Item
                         {...restField}
-                        label="出发地"
+                        label={index === 0 ? "出发地" : "出发地（可选）"}
                         name={[name, "origin"]}
-                        rules={[{ required: true, message: "请输入出发地" }]}
+                        rules={[
+                          { required: index === 0, message: "请输入出发地" },
+                        ]}
                       >
-                        <Input placeholder="例: 南昌昌北 KHN-NANCHANG" />
+                        <AutoComplete
+                          options={airportSearchOptions}
+                          placeholder={
+                            index === 0
+                              ? "例: 北京/PEK/BEIJING"
+                              : "例: 北京/PEK/BEIJING（可选）"
+                          }
+                          onSearch={handleAirportSearch}
+                          filterOption={false}
+                          allowClear
+                        />
                       </Form.Item>
 
                       <Form.Item
@@ -878,7 +820,13 @@ const ETicketGenerator: React.FC = () => {
                         name={[name, "destination"]}
                         rules={[{ required: true, message: "请输入目的地" }]}
                       >
-                        <Input placeholder="例: 北京大兴 PEK-BEIJING" />
+                        <AutoComplete
+                          options={airportSearchOptions}
+                          placeholder="例: 北京/PEK/BEIJING"
+                          onSearch={handleAirportSearch}
+                          filterOption={false}
+                          allowClear
+                        />
                       </Form.Item>
 
                       <Form.Item
