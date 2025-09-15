@@ -143,9 +143,16 @@ const pdfStyles = StyleSheet.create({
     fontSize: 9,
   },
   tableCell: {
-    padding: 8,
+    padding: 6,
     // borderBottom: "1px solid #ccc",
     // borderRight: "1px solid #000",
+    textAlign: "center",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tableCellLast: {
+    padding: 6,
+    borderBottom: "1px solid #ccc",
     textAlign: "center",
     justifyContent: "center",
     alignItems: "center",
@@ -260,8 +267,11 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
         {flightData.segments &&
           flightData.segments.length > 0 &&
           flightData.segments.map((segment, index) => (
-            <View key={index} style={pdfStyles.tableRow}>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOrigin]}>
+            <View
+              key={index}
+              style={pdfStyles.tableRow}
+            >
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOrigin]}>
                 <Text>
                   {formatAirportCode(segment.origin || "")?.split("\n")[0] ||
                     ""}
@@ -278,10 +288,10 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                   )[1] || ""}
                 </Text>
               </View>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>{segment.flightNumber || ""}</Text>
               </View>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>
                   {classMapping[segment.flightClass]?.chinese ||
                     segment.flightClass ||
@@ -292,24 +302,24 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                     ""}
                 </Text>
               </View>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>
                   {segment.date?.split("\n")[0] || ""}
                   {"\n"}
                   {segment.date?.split("\n")[1] || ""}
                 </Text>
               </View>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>{segment.depTime || ""}</Text>
               </View>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>{segment.arrTime || ""}</Text>
               </View>
               {/* 托运行李 */}
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>{segment.baggage || ""}</Text>
               </View>
-              <View style={[pdfStyles.tableCell, pdfStyles.tableColOther]}>
+              <View style={[index === flightData.segments.length - 1 ? pdfStyles.tableCellLast : pdfStyles.tableCell, pdfStyles.tableColOther]}>
                 <Text>
                   {segment.terminal1 || "-"} {segment.terminal2 || "-"}
                 </Text>
