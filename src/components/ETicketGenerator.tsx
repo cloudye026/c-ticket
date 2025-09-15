@@ -70,6 +70,27 @@ const handlePrint = () => {
   window.print();
 };
 
+// 处理旅客姓名格式化 - 英文姓名转为大写
+const formatPassengerName = (name: string): string => {
+  if (!name) return name;
+
+  // 检测是否为英文姓名 (只包含英文字母、空格、点号、连字符)
+  const englishNamePattern = /^[A-Za-z\s.-]+$/;
+
+  if (englishNamePattern.test(name)) {
+    // 英文姓名转为大写
+    return name.toUpperCase();
+  }
+
+  // 中文姓名或混合姓名保持原样
+  return name;
+};
+
+// 去除字符串前后及中间所有空格
+const removeAllSpaces = (str: string): string => {
+  return str ? str.replace(/\s+/g, '') : str;
+};
+
 // 生成PDF文件名
 const generatePDFFileName = (flightData: FormattedFlightData): string => {
   if (!flightData.segments || flightData.segments.length === 0) {
@@ -229,7 +250,9 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
 
         <View style={pdfStyles.infoRow}>
           <View style={pdfStyles.infoLeft}>
-            <Text>旅客姓名 NAME: {flightData.passengerName}</Text>
+            <Text>
+              旅客姓名 NAME: {formatPassengerName(flightData.passengerName)}
+            </Text>
           </View>
           <View style={pdfStyles.infoRight}>
             <Text>票号 ETKT NBR: {flightData.eticketNbr}</Text>
@@ -395,7 +418,7 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                 ]}
               >
                 <Text>
-                  {segment.terminal1 || "-"}    {segment.terminal2 || "-"}
+                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
                 </Text>
               </View>
             </View>
@@ -540,9 +563,14 @@ const ETicketGenerator: React.FC = () => {
     try {
       const formattedData: FormattedFlightData = {
         ...values,
+        airlineRecordLocator: removeAllSpaces(values.airlineRecordLocator), // 去除航司记录编号空格
+        bookingRef: removeAllSpaces(values.bookingRef), // 去除订座记录编号空格
+        eticketNbr: removeAllSpaces(values.eticketNbr), // 去除电子客票号空格
+        passengerName: formatPassengerName(values.passengerName), // 格式化旅客姓名
         dateOfIssue: values.dateOfIssue?.format("DDMMMYY").toUpperCase() || "",
         segments: (values.segments || []).map((segment) => ({
           ...segment,
+          flightNumber: removeAllSpaces(segment.flightNumber), // 去除航班号空格
           date: segment.date
             ? `${segment.date.format("MM月DD日")}\n${segment.date
                 .format("DD MMM")
@@ -600,7 +628,9 @@ const ETicketGenerator: React.FC = () => {
           <div className="info-row">
             <div className="info-left">
               <AntText>旅客姓名 NAME: </AntText>
-              <AntText strong>{flightData.passengerName}</AntText>
+              <AntText strong>
+                {formatPassengerName(flightData.passengerName)}
+              </AntText>
             </div>
             <div className="info-right">
               <AntText>票号 ETKT NBR: </AntText>
@@ -792,7 +822,7 @@ const ETicketGenerator: React.FC = () => {
               name="passengerName"
               rules={[{ required: true, message: "请输入旅客姓名" }]}
             >
-              <Input placeholder="例: 黄吉华" />
+              <Input placeholder="例: ZHANG SAN 或 张三" />
             </Form.Item>
 
             <Form.Item
