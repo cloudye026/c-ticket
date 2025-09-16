@@ -1114,6 +1114,12 @@ const ETicketGenerator: React.FC = () => {
       {showTicket && flightData && (
         <Card className="ticket-card">{generateTicket()}</Card>
       )}
+
+      <footer className="footer">
+        <a href="https://beian.miit.gov.cn/#/Integrated/index" className="beian-link">
+          京ICP备2023032161号-1
+        </a>
+      </footer>
     </div>
   );
 };
