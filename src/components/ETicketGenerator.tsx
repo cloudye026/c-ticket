@@ -806,7 +806,15 @@ const ETicketGenerator: React.FC = () => {
               name="airlineRecordLocator"
               rules={[{ required: true, message: "请输入航司记录编号" }]}
             >
-              <Input placeholder="例: QLPXMR" />
+              <Input
+                placeholder="例: QLPXMR"
+                maxLength={6}
+                style={{ textTransform: "uppercase" }}
+                onInput={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  target.value = target.value.replace(/[^A-Za-z]/g, "");
+                }}
+              />
             </Form.Item>
 
             <Form.Item
@@ -814,7 +822,15 @@ const ETicketGenerator: React.FC = () => {
               name="bookingRef"
               rules={[{ required: true, message: "请输入订座记录编号" }]}
             >
-              <Input placeholder="例: HT6E3T" />
+              <Input
+                placeholder="例: HT6E3T"
+                maxLength={6}
+                style={{ textTransform: "uppercase" }}
+                onInput={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  target.value = target.value.replace(/[^A-Za-z]/g, "");
+                }}
+              />
             </Form.Item>
 
             <Form.Item
@@ -830,7 +846,14 @@ const ETicketGenerator: React.FC = () => {
               name="eticketNbr"
               rules={[{ required: true, message: "请输入电子客票号" }]}
             >
-              <Input placeholder="例: 989295869152" />
+              <Input
+                placeholder="例: 9892958691523"
+                maxLength={13}
+                onInput={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  target.value = target.value.replace(/[^0-9]/g, "");
+                }}
+              />
             </Form.Item>
 
             <Form.Item
