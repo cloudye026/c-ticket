@@ -36,6 +36,7 @@ export const airlineMapping: { [key: string]: string } = {
   长安航空: "CHANGAN AIRLINES",
   中国联合航空: "CHINA UNITED AIRLINES",
   瑞丽航空: "RUILI AIRLINES",
+  长荣航空: "EVA AIR",
 };
 
 // 航空公司选项数组
