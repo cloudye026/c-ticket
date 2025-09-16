@@ -24,7 +24,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import "./ETicketGenerator.css";
-import iataLogo from "../images/IATA.jpg";
+import { IATA_LOGO_DATA_URI } from "../constants/iataLogo";
 import {
   classMapping,
   terminalOptions,
@@ -88,7 +88,7 @@ const formatPassengerName = (name: string): string => {
 
 // 去除字符串前后及中间所有空格
 const removeAllSpaces = (str: string): string => {
-  return str ? str.replace(/\s+/g, '') : str;
+  return str ? str.replace(/\s+/g, "") : str;
 };
 
 // 生成PDF文件名
@@ -230,7 +230,7 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
   <Document>
     <Page size="A4" style={pdfStyles.page}>
       <View style={pdfStyles.header}>
-        <Image src={iataLogo} style={pdfStyles.logo} />
+        <Image src={IATA_LOGO_DATA_URI} style={pdfStyles.logo} />
       </View>
       <View style={pdfStyles.titleSection}>
         <Text style={pdfStyles.title}>{"电子客票行程单"}</Text>
@@ -599,7 +599,7 @@ const ETicketGenerator: React.FC = () => {
     return (
       <div className="eticket-container">
         <div className="eticket-header">
-          <img src={iataLogo} alt="IATA" className="iata-logo" />
+          <img src={IATA_LOGO_DATA_URI} alt="IATA" className="iata-logo" />
         </div>
 
         <div className="ticket-title-section">
