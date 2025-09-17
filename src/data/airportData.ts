@@ -438,6 +438,17 @@ export const airportData: CityAirports[] = [
       },
     ],
   },
+  {
+    city: "无锡",
+    airports: [
+      {
+        name: "无锡硕放",
+        code: "WUX",
+        pinyin: "WUXI",
+        display: "苏南无锡硕放 WUX-WUXI",
+      },
+    ],
+  },
   // 国际城市
   {
     city: "东京",
