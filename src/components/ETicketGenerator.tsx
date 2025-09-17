@@ -810,10 +810,6 @@ const ETicketGenerator: React.FC = () => {
                 placeholder="例: QLPXMR"
                 maxLength={6}
                 style={{ textTransform: "uppercase" }}
-                onInput={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  target.value = target.value.replace(/[^A-Za-z]/g, "");
-                }}
               />
             </Form.Item>
 
@@ -826,10 +822,6 @@ const ETicketGenerator: React.FC = () => {
                 placeholder="例: HT6E3T"
                 maxLength={6}
                 style={{ textTransform: "uppercase" }}
-                onInput={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  target.value = target.value.replace(/[^A-Za-z]/g, "");
-                }}
               />
             </Form.Item>
 
@@ -848,7 +840,7 @@ const ETicketGenerator: React.FC = () => {
             >
               <Input
                 placeholder="例: 9892958691523"
-                maxLength={13}
+                maxLength={15}
                 onInput={(e) => {
                   const target = e.target as HTMLInputElement;
                   target.value = target.value.replace(/[^0-9]/g, "");
@@ -1116,7 +1108,10 @@ const ETicketGenerator: React.FC = () => {
       )}
 
       <footer className="footer">
-        <a href="https://beian.miit.gov.cn/#/Integrated/index" className="beian-link">
+        <a
+          href="https://beian.miit.gov.cn/#/Integrated/index"
+          className="beian-link"
+        >
           京ICP备2023032161号-1
         </a>
       </footer>
