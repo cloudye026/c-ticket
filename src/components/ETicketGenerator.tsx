@@ -418,7 +418,7 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                 ]}
               >
                 <Text>
-                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
+                  {segment.terminal1 || "-"}     {segment.terminal2 || "-"}
                 </Text>
               </View>
             </View>
@@ -747,7 +747,7 @@ const ETicketGenerator: React.FC = () => {
                 <div className="col-arrtime">{segment.arrTime || ""}</div>
                 <div className="col-baggage">{segment.baggage || ""}</div>
                 <div className="col-terminal">
-                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
+                  {segment.terminal1 || "-"}     {segment.terminal2 || "-"}
                 </div>
               </div>
             ))}
