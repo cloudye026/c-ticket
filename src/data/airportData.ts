@@ -449,6 +449,17 @@ export const airportData: CityAirports[] = [
       },
     ],
   },
+  {
+    city: "常州",
+    airports: [
+      {
+        name: "常州奔牛",
+        code: "CZX",
+        pinyin: "CHANGZHOU",
+        display: "常州奔牛 CZX-CHANGZHOU",
+      },
+    ],
+  },
   // 国际城市
   {
     city: "东京",
