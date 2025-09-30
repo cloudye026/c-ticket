@@ -264,6 +264,11 @@ body {
   padding-right: 20px;
 }
 
+/* 航司名称文本样式：增加顶部间距 */
+.airline-text {
+  margin-top: 3px;
+}
+
 /* ==== 航班信息表格样式 ==== */
 /* 航班表格主容器：黑色边框 */
 .flight-table {

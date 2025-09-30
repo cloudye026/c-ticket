@@ -107,21 +107,27 @@ const generatePDFFileName = (flightData: FormattedFlightData): string => {
 
     // 提取去程日期
     const firstDateMatch = firstSegment.date?.match(/(\d{2})月(\d{2})日/);
-    const firstDate = firstDateMatch ? `${firstDateMatch[1]}${firstDateMatch[2]}` : "";
+    const firstDate = firstDateMatch
+      ? `${firstDateMatch[1]}${firstDateMatch[2]}`
+      : "";
 
     // 提取回程日期
     const lastDateMatch = lastSegment.date?.match(/(\d{2})月(\d{2})日/);
-    const lastDate = lastDateMatch ? `${lastDateMatch[1]}${lastDateMatch[2]}` : "";
+    const lastDate = lastDateMatch
+      ? `${lastDateMatch[1]}${lastDateMatch[2]}`
+      : "";
 
     // 提取第一航段的出发地和目的地
-    const firstOriginCode = firstSegment.origin?.match(/([A-Z]{3})-/)?.[1] || "";
-    const firstDestCode = firstSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
+    const firstOriginCode =
+      firstSegment.origin?.match(/([A-Z]{3})-/)?.[1] || "";
+    const firstDestCode =
+      firstSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
 
-    // 提取最后航段的出发地和目的地
-    const lastOriginCode = lastSegment.origin?.match(/([A-Z]{3})-/)?.[1] || "";
-    const lastDestCode = lastSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
+    // 提取最后航段的目的地
+    const lastDestCode =
+      lastSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
 
-    // 构建路线：出发地-目的地/出发地-目的地
+    // 构建路线：出发地-目的地-目的地
     const route = `${firstOriginCode}-${firstDestCode}-${lastDestCode}`;
 
     return `${firstDate}-${lastDate} ${route} ${passengerName}-电子客票行程单.pdf`;
@@ -200,6 +206,9 @@ const pdfStyles = StyleSheet.create({
   },
   infoRight: {
     flex: 1,
+  },
+  airlineText: {
+    marginTop: 3,
   },
   table: {
     // border: "2px solid #000",
@@ -283,17 +292,23 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
           </View>
         </View>
 
-        <View style={(flightData.issuingAirline?.includes('\n') || flightData.eticketNbr?.includes('\n')) ? pdfStyles.infoRowSmall : pdfStyles.infoRow}>
+        <View
+          style={
+            flightData.issuingAirline?.includes("\n")
+              ? pdfStyles.infoRowSmall
+              : pdfStyles.infoRow
+          }
+        >
           <View style={pdfStyles.infoLeft}>
             <Text>
               旅客姓名 NAME: {formatPassengerName(flightData.passengerName)}
             </Text>
           </View>
           <View style={pdfStyles.infoRight}>
-            {flightData.eticketNbr?.includes('\n') ? (
+            {flightData.eticketNbr?.includes("\n") ? (
               <>
                 <Text>票号 ETKT NBR:</Text>
-                {flightData.eticketNbr.split('\n').map((ticket, idx) => (
+                {flightData.eticketNbr.split("\n").map((ticket, idx) => (
                   <Text key={idx}>{ticket}</Text>
                 ))}
               </>
@@ -303,7 +318,13 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
           </View>
         </View>
 
-        <View style={(flightData.issuingAirline?.includes('\n') || flightData.eticketNbr?.includes('\n')) ? pdfStyles.infoRowSmall : pdfStyles.infoRow}>
+        <View
+          style={
+            flightData.issuingAirline?.includes("\n")
+              ? pdfStyles.infoRowSmall
+              : pdfStyles.infoRow
+          }
+        >
           <View style={pdfStyles.infoLeft}>
             <Text>旅行证件号码 ID NUMBER: {flightData.idNumber}</Text>
           </View>
@@ -315,8 +336,10 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
         <View style={pdfStyles.infoRow}>
           <View style={pdfStyles.infoLeft}>
             <Text>出票航空公司 ISSUING AIRLINE:</Text>
-            {flightData.issuingAirline?.split('\n').map((airline, idx) => (
-              <Text key={idx}>{airline}</Text>
+            {flightData.issuingAirline?.split("\n").map((airline, idx) => (
+              <Text key={idx} style={pdfStyles.airlineText}>
+                {airline}
+              </Text>
             ))}
           </View>
           <View style={pdfStyles.infoRight}>
@@ -559,8 +582,6 @@ const ETicketGenerator: React.FC = () => {
     null
   );
   const [showTicket, setShowTicket] = useState(false);
-  const [airlineSearchOptions, setAirlineSearchOptions] =
-    useState(airlineOptions);
   const [airportSearchOptions, setAirportSearchOptions] =
     useState<AirportOption[]>(flatAirportOptions);
 
@@ -583,61 +604,15 @@ const ETicketGenerator: React.FC = () => {
     setAirportSearchOptions(filteredOptions);
   };
 
-  // 处理航空公司搜索
-  const handleAirlineSearch = (value: string) => {
-    const filteredOptions = airlineOptions.filter((option) =>
-      option.label.toLowerCase().includes(value.toLowerCase())
-    );
-    setAirlineSearchOptions(filteredOptions);
-  };
-
-  // 处理航空公司选择，自动填充英文名称
-  const handleAirlineSelect = (value: string, option: any) => {
-    const englishName = airlineMapping[value] || value;
-    form.setFieldsValue({
-      issuingAirline: `${value} ${englishName}`
-    });
-  };
-
-  // 处理航空公司输入，检测是否输入完整中文名并自动补全
-  const handleAirlineInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const lines = value.split('\n');
-    const newLines = lines.map((line, index) => {
-      // 只处理当前行（最后一行或已完成的行）
-      const trimmedLine = line.trim();
-
-      // 检查是否已经包含英文（包含空格后有大写字母）
-      if (/\s+[A-Z]/.test(trimmedLine)) {
-        return line; // 已经有英文，不处理
-      }
-
-      // 尝试匹配航空公司中文名称
-      for (const [chineseName, englishName] of Object.entries(airlineMapping)) {
-        if (trimmedLine === chineseName) {
-          return `${chineseName} ${englishName}`;
-        }
-      }
-
-      return line;
-    });
-
-    if (newLines.join('\n') !== value) {
-      form.setFieldsValue({
-        issuingAirline: newLines.join('\n')
-      });
-    }
-  };
-
   const onFinish = (values: FlightData) => {
     try {
       // 将航司数组转换为"中文 英文"格式，每行一个
       const issuingAirline = (values.issuingAirlines || [])
-        .map(chineseName => {
+        .map((chineseName) => {
           const englishName = airlineMapping[chineseName] || chineseName;
           return `${chineseName} ${englishName}`;
         })
-        .join('\n');
+        .join("\n");
 
       const formattedData: FormattedFlightData = {
         ...values,
@@ -712,10 +687,10 @@ const ETicketGenerator: React.FC = () => {
               </AntText>
             </div>
             <div className="info-right">
-              {flightData.eticketNbr?.includes('\n') ? (
+              {flightData.eticketNbr?.includes("\n") ? (
                 <>
                   <AntText>票号 ETKT NBR: </AntText>
-                  {flightData.eticketNbr.split('\n').map((ticket, idx) => (
+                  {flightData.eticketNbr.split("\n").map((ticket, idx) => (
                     <div key={idx}>
                       <AntText strong>{ticket}</AntText>
                     </div>
@@ -744,8 +719,8 @@ const ETicketGenerator: React.FC = () => {
           <div className="info-row">
             <div className="info-left">
               <AntText>出票航空公司 ISSUING AIRLINE: </AntText>
-              {flightData.issuingAirline?.split('\n').map((airline, idx) => (
-                <div key={idx}>
+              {flightData.issuingAirline?.split("\n").map((airline, idx) => (
+                <div key={idx} className="airline-text">
                   <AntText strong>{airline}</AntText>
                 </div>
               ))}
@@ -990,7 +965,9 @@ const ETicketGenerator: React.FC = () => {
                 placeholder="请选择航空公司"
                 options={airlineOptions}
                 filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  (option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
                 }
                 allowClear
                 showSearch
