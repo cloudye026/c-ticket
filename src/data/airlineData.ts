@@ -71,5 +71,5 @@ export const airlineMapping: { [key: string]: string } = {
 // 航空公司选项数组
 export const airlineOptions = Object.keys(airlineMapping).map((airline) => ({
   value: airline,
-  label: airline,
+  label: `${airline} ${airlineMapping[airline]}`,
 }));

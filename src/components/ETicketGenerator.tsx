@@ -543,7 +543,7 @@ interface FlightData {
   airlineRecordLocator: string;
   bookingRef: string;
   passengerName: string;
-  eticketNbr: string;
+  eticketNumbers: string[];
   idNumber: string;
   conjNbr: string;
   issuingAirlines: string[];
@@ -618,7 +618,10 @@ const ETicketGenerator: React.FC = () => {
         ...values,
         airlineRecordLocator: removeAllSpaces(values.airlineRecordLocator), // 去除航司记录编号空格
         bookingRef: removeAllSpaces(values.bookingRef), // 去除订座记录编号空格
-        eticketNbr: values.eticketNbr?.trim() || "", // 保留换行符，只去除首尾空格
+        eticketNbr: (values.eticketNumbers || [])
+          .map(ticket => ticket?.trim())
+          .filter(Boolean)
+          .join("\n"), // 将票号数组转换为换行符分隔的字符串
         passengerName: formatPassengerName(values.passengerName), // 格式化旅客姓名
         issuingAirline: issuingAirline, // 转换后的航司字符串
         dateOfIssue: values.dateOfIssue?.format("DDMMMYY").toUpperCase() || "",
@@ -875,7 +878,7 @@ const ETicketGenerator: React.FC = () => {
             airlineRecordLocator: "HT6E3T",
             bookingRef: "HT6E3T",
             passengerName: "张三",
-            eticketNbr: "9892958691523",
+            eticketNumbers: ["9892958691523"],
             issuingAirlines: ["江西航空"],
             dateOfIssue: dayjs("2019-09-03", dateFormat),
             segments: [
@@ -927,22 +930,6 @@ const ETicketGenerator: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="电子客票号"
-              name="eticketNbr"
-              rules={[{ required: true, message: "请输入电子客票号" }]}
-              tooltip="支持多个票号，每行一个"
-            >
-              <Input.TextArea
-                placeholder="例: 9892958691523&#10;多个票号请换行输入"
-                autoSize={{ minRows: 1, maxRows: 5 }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.value = target.value.replace(/[^0-9\n]/g, "");
-                }}
-              />
-            </Form.Item>
-
-            <Form.Item
               label="证件号码"
               name="idNumber"
               rules={[{ message: "请输入证件号码" }]}
@@ -953,27 +940,151 @@ const ETicketGenerator: React.FC = () => {
             <Form.Item label="联票号" name="conjNbr">
               <Input placeholder="联票号（可选）" />
             </Form.Item>
+          </div>
 
-            <Form.Item
-              label="出票航空公司"
-              name="issuingAirlines"
-              rules={[{ required: true, message: "请选择出票航空公司" }]}
-              tooltip="支持多选航空公司"
-            >
-              <Select
-                mode="multiple"
-                placeholder="请选择航空公司"
-                options={airlineOptions}
-                filterOption={(input, option) =>
-                  (option?.label ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                allowClear
-                showSearch
-              />
-            </Form.Item>
+          {/* 电子客票号动态列表 */}
+          <Divider orientation="left">电子客票号</Divider>
+          <Form.List
+            name="eticketNumbers"
+            rules={[
+              {
+                validator: async (_, eticketNumbers) => {
+                  if (!eticketNumbers || eticketNumbers.length < 1) {
+                    return Promise.reject(new Error("至少需要一个电子客票号"));
+                  }
+                },
+              },
+            ]}
+          >
+            {(fields, { add, remove }, { errors }) => (
+              <>
+                <div className="form-grid">
+                  {fields.map((field, index) => (
+                    <Form.Item
+                      key={field.key}
+                      label={`票号 ${index + 1}`}
+                      required
+                    >
+                      <Space.Compact style={{ width: "100%" }}>
+                        <Form.Item
+                          {...field}
+                          noStyle
+                          rules={[
+                            { required: true, message: "请输入电子客票号" },
+                            {
+                              pattern: /^[0-9]+$/,
+                              message: "票号只能包含数字",
+                            },
+                          ]}
+                        >
+                          <Input
+                            placeholder="例: 9892958691523"
+                            style={{ width: "100%" }}
+                            onBlur={(e) => {
+                              const trimmedValue = e.target.value.trim();
+                              const newValues = form.getFieldValue('eticketNumbers');
+                              newValues[field.name] = trimmedValue;
+                              form.setFieldValue('eticketNumbers', newValues);
+                            }}
+                          />
+                        </Form.Item>
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            onClick={() => remove(field.name)}
+                          >
+                            删除
+                          </Button>
+                        )}
+                      </Space.Compact>
+                    </Form.Item>
+                  ))}
+                </div>
+                <Form.Item>
+                  <Button
+                    type="link"
+                    onClick={() => add()}
+                    style={{ paddingLeft: 0 }}
+                  >
+                    + 添加票号
+                  </Button>
+                  <Form.ErrorList errors={errors} />
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
 
+          {/* 出票航空公司动态列表 */}
+          <Divider orientation="left">出票航空公司</Divider>
+          <Form.List
+            name="issuingAirlines"
+            rules={[
+              {
+                validator: async (_, issuingAirlines) => {
+                  if (!issuingAirlines || issuingAirlines.length < 1) {
+                    return Promise.reject(new Error("至少需要一个出票航空公司"));
+                  }
+                },
+              },
+            ]}
+          >
+            {(fields, { add, remove }, { errors }) => (
+              <>
+                <div className="form-grid">
+                  {fields.map((field, index) => (
+                    <Form.Item
+                      key={field.key}
+                      label={`航空公司 ${index + 1}`}
+                      required
+                    >
+                      <Space.Compact style={{ width: "100%" }}>
+                        <Form.Item
+                          {...field}
+                          noStyle
+                          rules={[
+                            { required: true, message: "请选择航空公司" },
+                          ]}
+                        >
+                          <Select
+                            placeholder="请选择航空公司"
+                            options={airlineOptions}
+                            filterOption={(input, option) =>
+                              (option?.label ?? "")
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
+                            }
+                            allowClear
+                            showSearch
+                            style={{ width: "100%" }}
+                          />
+                        </Form.Item>
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            onClick={() => remove(field.name)}
+                          >
+                            删除
+                          </Button>
+                        )}
+                      </Space.Compact>
+                    </Form.Item>
+                  ))}
+                </div>
+                <Form.Item>
+                  <Button
+                    type="link"
+                    onClick={() => add()}
+                    style={{ paddingLeft: 0 }}
+                  >
+                    + 添加航空公司
+                  </Button>
+                  <Form.ErrorList errors={errors} />
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+
+          <div className="form-grid">
             <Form.Item
               label="出票日期"
               name="dateOfIssue"
