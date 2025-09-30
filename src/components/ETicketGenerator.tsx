@@ -32,6 +32,7 @@ import {
 } from "../data/flightConstants";
 import { airlineMapping, airlineOptions } from "../data/airlineData";
 import { flatAirportOptions, type AirportOption } from "../data/airportData";
+import dayjs from "dayjs";
 
 // 使用本地思源黑体字体
 Font.register({
@@ -321,12 +322,14 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                 ]}
               >
                 <Text>
-                  {formatAirportCode(segment.origin || "")?.split("\n")[0] ||
-                    ""}
-                  {"\n"}
-                  {formatAirportCode(segment.origin || "")?.split("\n")[1] ||
-                    ""}
-                  {"\n"}
+                  {segment.origin && (
+                    <>
+                      {formatAirportCode(segment.origin)?.split("\n")[0] || ""}
+                      {"\n"}
+                      {formatAirportCode(segment.origin)?.split("\n")[1] || ""}
+                      {"\n"}
+                    </>
+                  )}
                   {formatAirportCode(segment.destination || "")?.split(
                     "\n"
                   )[0] || ""}
@@ -418,7 +421,7 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
                 ]}
               >
                 <Text>
-                  {segment.terminal1 || "-"}     {segment.terminal2 || "-"}
+                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
                 </Text>
               </View>
             </View>
@@ -747,7 +750,7 @@ const ETicketGenerator: React.FC = () => {
                 <div className="col-arrtime">{segment.arrTime || ""}</div>
                 <div className="col-baggage">{segment.baggage || ""}</div>
                 <div className="col-terminal">
-                  {segment.terminal1 || "-"}     {segment.terminal2 || "-"}
+                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
                 </div>
               </div>
             ))}
@@ -793,12 +796,39 @@ const ETicketGenerator: React.FC = () => {
     );
   };
 
+  const dateFormat = "YYYY-MM-DD";
+
   return (
     <div className="eticket-generator">
       {/* 主表单卡片：包含所有输入字段和操作按钮 */}
       <Card title="ETERM电子客票生成器" className="form-card">
         {/* 主表单：使用垂直布局，提交时调用onFinish函数 */}
-        <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{
+            airlineRecordLocator: "HT6E3T",
+            bookingRef: "HT6E3T",
+            passengerName: "张三",
+            eticketNbr: "9892958691523",
+            issuingAirlineCN: "江西航空",
+            issuingAirlineEN: "JIANGXI AIR",
+            dateOfIssue: dayjs("2019-09-03", dateFormat),
+            segments: [
+              {
+                origin: "北京首都 PEK-BEIJING",
+                destination: "上海虹桥 SHA-SHANGHAI",
+                flightNumber: "CA1231",
+                flightClass: "Y",
+                date: dayjs("2025-10-01", dateFormat),
+                depTime: dayjs("12:08", "HH:mm"),
+                arrTime: dayjs("14:30", "HH:mm"),
+                baggage: "20KG",
+              },
+            ],
+          }}
+        >
           {/* 表单字段网格布局 */}
           <div className="form-grid">
             <Form.Item
@@ -807,7 +837,7 @@ const ETicketGenerator: React.FC = () => {
               rules={[{ required: true, message: "请输入航司记录编号" }]}
             >
               <Input
-                placeholder="例: QLPXMR"
+                placeholder="例: HT6E3T"
                 maxLength={6}
                 style={{ textTransform: "uppercase" }}
               />
