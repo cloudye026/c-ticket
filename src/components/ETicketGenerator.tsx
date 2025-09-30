@@ -32,7 +32,7 @@ import {
 } from "../data/flightConstants";
 import { airlineMapping, airlineOptions } from "../data/airlineData";
 import { flatAirportOptions, type AirportOption } from "../data/airportData";
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 
 // 使用本地思源黑体字体
 Font.register({
@@ -619,7 +619,7 @@ const ETicketGenerator: React.FC = () => {
         airlineRecordLocator: removeAllSpaces(values.airlineRecordLocator), // 去除航司记录编号空格
         bookingRef: removeAllSpaces(values.bookingRef), // 去除订座记录编号空格
         eticketNbr: (values.eticketNumbers || [])
-          .map(ticket => ticket?.trim())
+          .map((ticket) => ticket?.trim())
           .filter(Boolean)
           .join("\n"), // 将票号数组转换为换行符分隔的字符串
         passengerName: formatPassengerName(values.passengerName), // 格式化旅客姓名
@@ -863,7 +863,7 @@ const ETicketGenerator: React.FC = () => {
     );
   };
 
-  const dateFormat = "YYYY-MM-DD";
+  // const dateFormat = "YYYY-MM-DD";
 
   return (
     <div className="eticket-generator">
@@ -874,26 +874,26 @@ const ETicketGenerator: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{
-            airlineRecordLocator: "HT6E3T",
-            bookingRef: "HT6E3T",
-            passengerName: "张三",
-            eticketNumbers: ["9892958691523"],
-            issuingAirlines: ["江西航空"],
-            dateOfIssue: dayjs("2019-09-03", dateFormat),
-            segments: [
-              {
-                origin: "北京首都 PEK-BEIJING",
-                destination: "上海虹桥 SHA-SHANGHAI",
-                flightNumber: "CA1231",
-                flightClass: "Y",
-                date: dayjs("2025-10-01", dateFormat),
-                depTime: dayjs("12:08", "HH:mm"),
-                arrTime: dayjs("14:30", "HH:mm"),
-                baggage: "20KG",
-              },
-            ],
-          }}
+          // initialValues={{
+          //   airlineRecordLocator: "HT6E3T",
+          //   bookingRef: "HT6E3T",
+          //   passengerName: "张三",
+          //   eticketNumbers: ["9892958691523"],
+          //   issuingAirlines: ["江西航空"],
+          //   dateOfIssue: dayjs("2019-09-03", dateFormat),
+          //   segments: [
+          //     {
+          //       origin: "北京首都 PEK-BEIJING",
+          //       destination: "上海虹桥 SHA-SHANGHAI",
+          //       flightNumber: "CA1231",
+          //       flightClass: "Y",
+          //       date: dayjs("2025-10-01", dateFormat),
+          //       depTime: dayjs("12:08", "HH:mm"),
+          //       arrTime: dayjs("14:30", "HH:mm"),
+          //       baggage: "20KG",
+          //     },
+          //   ],
+          // }}
         >
           {/* 表单字段网格布局 */}
           <div className="form-grid">
@@ -946,6 +946,7 @@ const ETicketGenerator: React.FC = () => {
           <Divider orientation="left">电子客票号</Divider>
           <Form.List
             name="eticketNumbers"
+            initialValue={[""]}
             rules={[
               {
                 validator: async (_, eticketNumbers) => {
@@ -967,7 +968,7 @@ const ETicketGenerator: React.FC = () => {
                     >
                       <Space.Compact style={{ width: "100%" }}>
                         <Form.Item
-                          {...field}
+                          name={field.name}
                           noStyle
                           rules={[
                             { required: true, message: "请输入电子客票号" },
@@ -982,17 +983,15 @@ const ETicketGenerator: React.FC = () => {
                             style={{ width: "100%" }}
                             onBlur={(e) => {
                               const trimmedValue = e.target.value.trim();
-                              const newValues = form.getFieldValue('eticketNumbers');
+                              const newValues =
+                                form.getFieldValue("eticketNumbers");
                               newValues[field.name] = trimmedValue;
-                              form.setFieldValue('eticketNumbers', newValues);
+                              form.setFieldValue("eticketNumbers", newValues);
                             }}
                           />
                         </Form.Item>
                         {fields.length > 1 && (
-                          <Button
-                            danger
-                            onClick={() => remove(field.name)}
-                          >
+                          <Button danger onClick={() => remove(field.name)}>
                             删除
                           </Button>
                         )}
@@ -1018,11 +1017,14 @@ const ETicketGenerator: React.FC = () => {
           <Divider orientation="left">出票航空公司</Divider>
           <Form.List
             name="issuingAirlines"
+            initialValue={[undefined]}
             rules={[
               {
                 validator: async (_, issuingAirlines) => {
                   if (!issuingAirlines || issuingAirlines.length < 1) {
-                    return Promise.reject(new Error("至少需要一个出票航空公司"));
+                    return Promise.reject(
+                      new Error("至少需要一个出票航空公司")
+                    );
                   }
                 },
               },
@@ -1039,7 +1041,7 @@ const ETicketGenerator: React.FC = () => {
                     >
                       <Space.Compact style={{ width: "100%" }}>
                         <Form.Item
-                          {...field}
+                          name={field.name}
                           noStyle
                           rules={[
                             { required: true, message: "请选择航空公司" },
@@ -1059,10 +1061,7 @@ const ETicketGenerator: React.FC = () => {
                           />
                         </Form.Item>
                         {fields.length > 1 && (
-                          <Button
-                            danger
-                            onClick={() => remove(field.name)}
-                          >
+                          <Button danger onClick={() => remove(field.name)}>
                             删除
                           </Button>
                         )}
