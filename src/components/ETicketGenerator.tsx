@@ -1308,11 +1308,10 @@ const ETicketGenerator: React.FC = () => {
       )}
 
       <footer className="footer">
-        <a
-          href="https://beian.miit.gov.cn/#/Integrated/index"
+        <a 
           className="beian-link"
         >
-          京ICP备2023032161号-1
+         Released under the MIT License. ()
         </a>
       </footer>
     </div>
