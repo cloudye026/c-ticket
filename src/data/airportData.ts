@@ -183,6 +183,12 @@ export const airportData: CityAirports[] = [
         pinyin: "QINGDAO",
         display: "青岛流亭 TAO-QINGDAO",
       },
+    {
+        name: "青岛胶东",
+        code: "TAO",
+        pinyin: "QINGDAO",
+        display: "青岛胶东 TAO-QINGDAO",
+    },
     ],
   },
   {
