@@ -37,6 +37,7 @@ export const airlineMapping: { [key: string]: string } = {
   中国联合航空: "CHINA UNITED AIRLINES",
   瑞丽航空: "RUILI AIRLINES",
   长荣航空: "EVA AIR",
+  上海航空: "SHANGHAI AIRLINES",
   // 国际航司
   日本航空: "JAPAN AIRLINES",
   全日空: "ALL NIPPON AIRWAYS",

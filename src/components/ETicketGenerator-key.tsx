@@ -43,6 +43,7 @@ const formatAirportCode = (airportInfo: string) => {
     const [, cityAirport, code, englishName] = match;
     return `${cityAirport}\n${code}-${englishName.toUpperCase()}`;
   }
+  console.log('match',match);
   return airportInfo;
 };
 
