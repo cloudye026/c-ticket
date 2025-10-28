@@ -3,9 +3,9 @@
  * 包含表单布局、客票样式和响应式设计
  */
 
-/* 页面背景优化 */
+/* 页面背景优化（柔和水墨风） */
 body {
-  background: #f5f7fa;
+  background: #f9f7f3;
   min-height: 100vh;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
@@ -13,15 +13,19 @@ body {
     sans-serif;
 }
 
-/* 全局根容器背景 */
+/* 全局根容器背景（多重径向渐变模拟水墨渲染） */
 #root {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background:
+    radial-gradient(1000px 600px at 15% 12%, rgba(0, 0, 0, 0.06), transparent 60%),
+    radial-gradient(800px 500px at 85% 20%, rgba(0, 0, 0, 0.045), transparent 65%),
+    radial-gradient(900px 600px at 50% 82%, rgba(0, 0, 0, 0.05), transparent 55%),
+    linear-gradient(180deg, #faf8f3 0%, #f7f4ee 100%);
   background-attachment: fixed;
   min-height: 100vh;
   position: relative;
 }
 
-/* 商务风格遮罩层 */
+/* 轻呼吸感遮罩层（缓慢呼吸动画） */
 #root::before {
   content: "";
   position: fixed;
@@ -30,9 +34,18 @@ body {
   width: 100%;
   height: 100%;
   background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(245, 247, 250, 0.92) 100%);
+    radial-gradient(700px 420px at 28% 28%, rgba(0, 0, 0, 0.05), transparent 60%),
+    radial-gradient(620px 420px at 72% 72%, rgba(0, 0, 0, 0.045), transparent 60%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.92) 0%, rgba(247, 247, 245, 0.90) 100%);
   pointer-events: none;
   z-index: 0;
+  opacity: 0.14;
+  animation: inkBreath 12s ease-in-out infinite;
+}
+
+@keyframes inkBreath {
+  0%, 100% { opacity: 0.14; }
+  50% { opacity: 0.20; }
 }
 
 /* Ant Design深层样式覆盖：移除卡片内部内边距 */
@@ -316,15 +329,21 @@ body {
 
 /* ==== 移动设备适配 ==== */
 @media (max-width: 768px) {
-  /* 移动端背景优化 */
+  /* 移动端背景优化（保持水墨风轻量） */
   body,
   #root {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background:
+      radial-gradient(700px 420px at 20% 12%, rgba(0, 0, 0, 0.05), transparent 60%),
+      radial-gradient(600px 380px at 80% 24%, rgba(0, 0, 0, 0.04), transparent 60%),
+      linear-gradient(180deg, #faf8f3 0%, #f7f4ee 100%);
     background-attachment: fixed;
   }
 
   #root::before {
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(245, 247, 250, 0.92) 100%);
+    background:
+      radial-gradient(520px 320px at 30% 30%, rgba(0, 0, 0, 0.045), transparent 60%),
+      radial-gradient(480px 320px at 70% 70%, rgba(0, 0, 0, 0.04), transparent 60%),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.92) 0%, rgba(247, 247, 245, 0.90) 100%);
   }
 
   /* 移动端主容器内边距调整 */
