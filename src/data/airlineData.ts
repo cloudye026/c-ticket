@@ -67,6 +67,7 @@ export const airlineMapping: { [key: string]: string } = {
   捷星航空: "JETSTAR",
   俄罗斯航空: "AEROFLOT",
   印度航空: "AIR INDIA",
+  国泰航空: "CATHAY PACIFIC"
 };
 
 // 航空公司选项数组
