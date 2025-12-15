@@ -183,12 +183,12 @@ export const airportData: CityAirports[] = [
         pinyin: "QINGDAO",
         display: "青岛流亭 TAO-QINGDAO",
       },
-    {
+      {
         name: "青岛胶东",
         code: "TAO",
         pinyin: "QINGDAO",
         display: "青岛胶东 TAO-QINGDAO",
-    },
+      },
     ],
   },
   {
@@ -309,6 +309,17 @@ export const airportData: CityAirports[] = [
         code: "URC",
         pinyin: "WULUMUQI",
         display: "乌鲁木齐地窝堡 URC-WULUMUQI",
+      },
+    ],
+  },
+  {
+    city: "阿勒泰",
+    airports: [
+      {
+        name: "阿勒泰雪都",
+        code: "AAT",
+        pinyin: "ALETAI",
+        display: "阿勒泰雪都 AAT-ALETAI",
       },
     ],
   },
