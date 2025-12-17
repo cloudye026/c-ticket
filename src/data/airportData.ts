@@ -164,6 +164,17 @@ export const airportData: CityAirports[] = [
     ],
   },
   {
+    city: "大理",
+    airports: [
+      {
+        name: "大理凤仪",
+        code: "DLU",
+        pinyin: "DALI",
+        display: "大理凤仪 DLU-DALI",
+      },
+    ],
+  },
+  {
     city: "厦门",
     airports: [
       {
