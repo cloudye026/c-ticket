@@ -488,6 +488,17 @@ export const airportData: CityAirports[] = [
       },
     ],
   },
+   {
+    city: "合肥",
+    airports: [
+      {
+        name: "合肥新桥",
+        code: "HFE",
+        pinyin: "HFE-HEFEI",
+        display: "合肥新桥 HFE-HEFEI",
+      },
+    ],
+  },
   // 国际城市
   {
     city: "东京",
