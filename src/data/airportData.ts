@@ -857,6 +857,17 @@ export const airportData: CityAirports[] = [
     ],
   },
   {
+  city: "普吉岛",
+  airports: [
+    {
+      name: "普吉机场",
+      code: "HKT",
+      pinyin: "PHUKET",
+      display: "普吉机场 HKT-PHUKET",
+    },
+  ],
+},
+  {
     city: "高雄",
     airports: [
       {
