@@ -32,7 +32,7 @@ import {
 } from "../data/flightConstants";
 import { airlineMapping, airlineOptions } from "../data/airlineData";
 import { flatAirportOptions, type AirportOption } from "../data/airportData";
-// import dayjs from "dayjs";
+import dayjs from "dayjs";
 
 // 使用本地思源黑体字体
 Font.register({
@@ -93,54 +93,55 @@ const removeAllSpaces = (str: string): string => {
 };
 
 // 生成PDF文件名
-const generatePDFFileName = (flightData: FormattedFlightData): string => {
-  if (!flightData.segments || flightData.segments.length === 0) {
-    return `${flightData.passengerName || "unknown"}-电子客票行程单.pdf`;
+const generatePDFFileName = (flightDataList: FormattedFlightData[]): string => {
+  if (!flightDataList || flightDataList.length === 0) {
+    return "unknown-电子客票行程单.pdf";
   }
 
-  const passengerName = flightData.passengerName || "unknown";
+  const first = flightDataList[0];
+  const passengerName = first.passengerName || "unknown";
 
-  // 如果有多个航段（往返或多程）
-  if (flightData.segments.length > 1) {
-    const firstSegment = flightData.segments[0];
-    const lastSegment = flightData.segments[flightData.segments.length - 1];
+  // 收集所有行程的航段
+  const allSegments = flightDataList.flatMap((d) => d.segments || []);
+  if (allSegments.length === 0) {
+    return `${passengerName}-电子客票行程单.pdf`;
+  }
 
-    // 提取去程日期
+  if (allSegments.length > 1) {
+    const firstSegment = allSegments[0];
+    const lastSegment = allSegments[allSegments.length - 1];
+
     const firstDateMatch = firstSegment.date?.match(/(\d{2})月(\d{2})日/);
     const firstDate = firstDateMatch
       ? `${firstDateMatch[1]}${firstDateMatch[2]}`
       : "";
 
-    // 提取回程日期
     const lastDateMatch = lastSegment.date?.match(/(\d{2})月(\d{2})日/);
     const lastDate = lastDateMatch
       ? `${lastDateMatch[1]}${lastDateMatch[2]}`
       : "";
 
-    // 提取第一航段的出发地和目的地
-    const firstOriginCode =
-      firstSegment.origin?.match(/([A-Z]{3})-/)?.[1] || "";
-    const firstDestCode =
-      firstSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
-
-    // 提取最后航段的目的地
-    const lastDestCode =
-      lastSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
-
-    // 构建路线：出发地-目的地-目的地
-    const route = `${firstOriginCode}-${firstDestCode}-${lastDestCode}`;
-
+    // 构建去重路线：相邻航段目的地与下一航段出发地相同时合并
+    const codes: string[] = [
+      allSegments[0].origin?.match(/([A-Z]{3})-/)?.[1] || "",
+    ];
+    for (const seg of allSegments) {
+      const dest = seg.destination?.match(/([A-Z]{3})-/)?.[1] || "";
+      const origin = seg.origin?.match(/([A-Z]{3})-/)?.[1] || "";
+      if (origin && origin !== codes[codes.length - 1]) {
+        codes.push(origin);
+      }
+      if (dest) {
+        codes.push(dest);
+      }
+    }
+    const route = codes.filter(Boolean).join("-");
     return `${firstDate}-${lastDate} ${route} ${passengerName}-电子客票行程单.pdf`;
   }
 
-  // 单程航段，保持原格式
-  const firstSegment = flightData.segments[0];
-
-  // 提取日期 (MM月DD日 格式中的月日)
+  const firstSegment = allSegments[0];
   const dateMatch = firstSegment.date?.match(/(\d{2})月(\d{2})日/);
   const flightDate = dateMatch ? `${dateMatch[1]}${dateMatch[2]}` : "";
-
-  // 提取出发地和目的地三字代码
   const originCode = firstSegment.origin?.match(/([A-Z]{3})-/)?.[1] || "";
   const destCode = firstSegment.destination?.match(/([A-Z]{3})-/)?.[1] || "";
 
@@ -269,10 +270,9 @@ const pdfStyles = StyleSheet.create({
   },
 });
 
-// 导出 PDF
-const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
-  <Document>
-    <Page size="A4" style={pdfStyles.page}>
+// 单页 PDF 内容
+const ETicketPage = ({ flightData }: { flightData: FormattedFlightData }) => (
+  <Page size="A4" style={pdfStyles.page}>
       <View style={pdfStyles.header}>
         <Image src={IATA_LOGO_DATA_URI} style={pdfStyles.logo} />
       </View>
@@ -523,6 +523,18 @@ const ETicketPDF = ({ flightData }: { flightData: FormattedFlightData }) => (
         </View>
       </View>
     </Page>
+);
+
+// 导出 PDF（支持多页）
+const ETicketPDF = ({
+  flightDataList,
+}: {
+  flightDataList: FormattedFlightData[];
+}) => (
+  <Document>
+    {flightDataList.map((data, idx) => (
+      <ETicketPage key={idx} flightData={data} />
+    ))}
   </Document>
 );
 
@@ -549,6 +561,10 @@ interface FlightData {
   issuingAirlines: string[];
   dateOfIssue: Dayjs | null;
   segments: FlightSegment[];
+}
+
+interface FlightDataForm {
+  itineraries: FlightData[];
 }
 
 interface FormattedFlightSegment {
@@ -578,12 +594,13 @@ interface FormattedFlightData {
 
 const ETicketGenerator: React.FC = () => {
   const [form] = Form.useForm();
-  const [flightData, setFlightData] = useState<FormattedFlightData | null>(
+  const [flightData, setFlightData] = useState<FormattedFlightData[] | null>(
     null
   );
   const [showTicket, setShowTicket] = useState(false);
   const [airportSearchOptions, setAirportSearchOptions] =
     useState<AirportOption[]>(flatAirportOptions);
+  const [pdfKey, setPdfKey] = useState(0);
 
   // 处理机场搜索
   const handleAirportSearch = (value: string) => {
@@ -604,49 +621,54 @@ const ETicketGenerator: React.FC = () => {
     setAirportSearchOptions(filteredOptions);
   };
 
-  const onFinish = (values: FlightData) => {
+  const onFinish = (values: FlightDataForm) => {
     try {
-      // 将航司数组转换为"中文 英文"格式，每行一个
-      const issuingAirline = (values.issuingAirlines || [])
-        .map((chineseName) => {
-          const englishName = airlineMapping[chineseName] || chineseName;
-          return `${chineseName} ${englishName}`;
-        })
-        .join("\n");
+      const formattedList: FormattedFlightData[] = values.itineraries.map(
+        (itinerary) => {
+          const issuingAirline = (itinerary.issuingAirlines || [])
+            .map((chineseName) => {
+              const englishName = airlineMapping[chineseName] || chineseName;
+              return `${chineseName} ${englishName}`;
+            })
+            .join("\n");
 
-      const formattedData: FormattedFlightData = {
-        ...values,
-        airlineRecordLocator: removeAllSpaces(values.airlineRecordLocator), // 去除航司记录编号空格
-        bookingRef: removeAllSpaces(values.bookingRef), // 去除订座记录编号空格
-        eticketNbr: (values.eticketNumbers || [])
-          .map((ticket) => ticket?.trim())
-          .filter(Boolean)
-          .join("\n"), // 将票号数组转换为换行符分隔的字符串
-        passengerName: formatPassengerName(values.passengerName), // 格式化旅客姓名
-        issuingAirline: issuingAirline, // 转换后的航司字符串
-        dateOfIssue: values.dateOfIssue?.format("DDMMMYY").toUpperCase() || "",
-        segments: (values.segments || []).map((segment) => ({
-          ...segment,
-          flightNumber: removeAllSpaces(segment.flightNumber), // 去除航班号空格
-          date: segment.date
-            ? `${segment.date.format("MM月DD日")}\n${segment.date
-                .format("DD MMM")
-                .toUpperCase()}`
-            : "",
-          depTime: segment.depTime?.format("HH:mm") || "",
-          arrTime: segment.arrTime?.format("HH:mm") || "",
-        })),
-      };
-      setFlightData(formattedData);
+          return {
+            ...itinerary,
+            airlineRecordLocator: removeAllSpaces(
+              itinerary.airlineRecordLocator
+            ),
+            bookingRef: removeAllSpaces(itinerary.bookingRef),
+            eticketNbr: (itinerary.eticketNumbers || [])
+              .map((ticket) => ticket?.trim())
+              .filter(Boolean)
+              .join("\n"),
+            passengerName: formatPassengerName(itinerary.passengerName),
+            issuingAirline: issuingAirline,
+            dateOfIssue:
+              itinerary.dateOfIssue?.format("DDMMMYY").toUpperCase() || "",
+            segments: (itinerary.segments || []).map((segment) => ({
+              ...segment,
+              flightNumber: removeAllSpaces(segment.flightNumber),
+              date: segment.date
+                ? `${segment.date.format("MM月DD日")}\n${segment.date
+                    .format("DD MMM")
+                    .toUpperCase()}`
+                : "",
+              depTime: segment.depTime?.format("HH:mm") || "",
+              arrTime: segment.arrTime?.format("HH:mm") || "",
+            })),
+          };
+        }
+      );
+      setFlightData(formattedList);
       setShowTicket(true);
     } catch (error) {
       console.error("生成客票时出错:", error);
-      // 可以在这里添加用户友好的错误提示
     }
   };
 
   const generateTicket = () => {
-    if (!flightData) {
+    if (!flightData || flightData.length === 0) {
       console.log("flightData is null, cannot generate ticket");
       return null;
     }
@@ -654,216 +676,227 @@ const ETicketGenerator: React.FC = () => {
     console.log("Generating ticket with data:", flightData);
 
     return (
-      <div className="eticket-container">
-        <div className="eticket-header">
-          <img src={IATA_LOGO_DATA_URI} alt="IATA" className="iata-logo" />
-        </div>
+      <>
+        {flightData.map((singleData, itineraryIdx) => (
+          <React.Fragment key={itineraryIdx}>
+            {itineraryIdx > 0 && (
+              <Divider style={{ borderTop: "2px dashed #ccc", margin: "24px 0" }}>
+                行程 {itineraryIdx + 1}
+              </Divider>
+            )}
+            <div className="eticket-container">
+              <div className="eticket-header">
+                <img src={IATA_LOGO_DATA_URI} alt="IATA" className="iata-logo" />
+              </div>
 
-        <div className="ticket-title-section">
-          <div className="ticket-title">
-            <Title level={2} className="chinese-title">
-              电子客票行程单
-            </Title>
-            <Title level={2} className="english-title">
-              ITINERARY
-            </Title>
-          </div>
-        </div>
-
-        <div className="ticket-info-section">
-          <div className="info-row">
-            <div className="info-left">
-              <AntText>航司记录编号 AIR BOOKING REF: </AntText>
-              <AntText strong>{flightData.airlineRecordLocator}</AntText>
-            </div>
-            <div className="info-right">
-              <AntText>订座记录编号 BOOKING REF: </AntText>
-              <AntText strong>{flightData.bookingRef}</AntText>
-            </div>
-          </div>
-
-          <div className="info-row">
-            <div className="info-left">
-              <AntText>旅客姓名 NAME: </AntText>
-              <AntText strong>
-                {formatPassengerName(flightData.passengerName)}
-              </AntText>
-            </div>
-            <div className="info-right">
-              {flightData.eticketNbr?.includes("\n") ? (
-                <>
-                  <AntText>票号 ETKT NBR: </AntText>
-                  {flightData.eticketNbr.split("\n").map((ticket, idx) => (
-                    <div key={idx}>
-                      <AntText strong>{ticket}</AntText>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <AntText>票号 ETKT NBR: </AntText>
-                  <AntText strong>{flightData.eticketNbr}</AntText>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="info-row">
-            <div className="info-left">
-              <AntText>旅行证件号码 ID NUMBER: </AntText>
-              <AntText strong>{flightData.idNumber}</AntText>
-            </div>
-            <div className="info-right">
-              <AntText>联票 CONJ NBR: </AntText>
-              <AntText strong>{flightData.conjNbr}</AntText>
-            </div>
-          </div>
-
-          <div className="info-row">
-            <div className="info-left">
-              <AntText>出票航空公司 ISSUING AIRLINE: </AntText>
-              {flightData.issuingAirline?.split("\n").map((airline, idx) => (
-                <div key={idx} className="airline-text">
-                  <AntText strong>{airline}</AntText>
-                </div>
-              ))}
-            </div>
-            <div className="info-right">
-              <AntText>出票时间 DATE OF ISSUE: </AntText>
-              <AntText strong>{flightData.dateOfIssue}</AntText>
-            </div>
-          </div>
-        </div>
-
-        <div className="flight-table">
-          <div className="table-header">
-            <div className="col-origin">
-              始发地/目的地
-              <br />
-              ORIGIN/DES
-            </div>
-            <div className="col-flight">
-              航班号
-              <br />
-              FLIGHT
-            </div>
-            <div className="col-class">
-              舱位
-              <br />
-              CLASS
-            </div>
-            <div className="col-date">
-              日期
-              <br />
-              DATE
-            </div>
-            <div className="col-deptime">
-              起飞时间
-              <br />
-              DEPTIME
-            </div>
-            <div className="col-arrtime">
-              到达时间
-              <br />
-              ARRTIME
-            </div>
-            <div className="col-baggage">
-              托运行李
-              <br />
-              BAGGAGE
-            </div>
-            <div className="col-terminal">
-              航站楼
-              <br />
-              TERMINAL
-            </div>
-          </div>
-
-          {flightData.segments &&
-            flightData.segments.length > 0 &&
-            flightData.segments.map((segment, index) => (
-              <div key={index} className="table-row">
-                <div className="col-origin">
-                  {segment.origin &&
-                    formatAirportCode(segment.origin)
-                      ?.split("\n")
-                      .map((line, lineIndex) => (
-                        <div key={`origin-${index}-${lineIndex}`}>{line}</div>
-                      ))}
-                  {formatAirportCode(segment.destination || "")
-                    ?.split("\n")
-                    .map((line, lineIndex) => (
-                      <div key={`dest-${index}-${lineIndex}`}>{line}</div>
-                    ))}
-                </div>
-                <div className="col-flight">{segment.flightNumber || ""}</div>
-                <div className="col-class">
-                  <div>
-                    {classMapping[segment.flightClass]?.chinese ||
-                      segment.flightClass ||
-                      ""}
-                  </div>
-                  <div>
-                    {classMapping[segment.flightClass]?.english ||
-                      segment.flightClass ||
-                      ""}
-                  </div>
-                </div>
-                <div className="col-date">
-                  <div>{segment.date?.split("\n")[0] || ""}</div>
-                  <div>{segment.date?.split("\n")[1] || ""}</div>
-                </div>
-                <div className="col-deptime">{segment.depTime || ""}</div>
-                <div className="col-arrtime">{segment.arrTime || ""}</div>
-                <div className="col-baggage">{segment.baggage || ""}</div>
-                <div className="col-terminal">
-                  {segment.terminal1 || "-"} {segment.terminal2 || "-"}
+              <div className="ticket-title-section">
+                <div className="ticket-title">
+                  <Title level={2} className="chinese-title">
+                    电子客票行程单
+                  </Title>
+                  <Title level={2} className="english-title">
+                    ITINERARY
+                  </Title>
                 </div>
               </div>
-            ))}
-        </div>
 
-        <div className="notice-section">
-          <Title className="notice-item" level={4}>
-            须知 NOTICE:
-          </Title>
-          <div className="notice-item">
-            <AntText>· 请您再次核对航班信息；</AntText>
-            <br />
-            <AntText>Please check the flight information again;</AntText>
-          </div>
-          <div className="notice-item">
-            <AntText>· 联程客票须按顺序使用，不得跳段使用；</AntText>
-            <br />
-            <AntText>
-              The connecting ticket shall be used in sequence and shall not be
-              used in skip section;
-            </AntText>
-          </div>
-          <div className="notice-item">
-            <AntText>· 请确认您的护照有效期至少在半年以上；</AntText>
-            <br />
-            <AntText>
-              Please confirm that your passport is valid for at least half a
-              year;
-            </AntText>
-          </div>
-          <div className="notice-item">
-            <AntText>
-              · 国际航班请您至少在航班起飞前3小时到达机场，并且办理乘机手续；
-            </AntText>
-            <br />
-            <AntText>
-              For international flights, please arrive at the airport at least 3
-              hours before departure and check in;
-            </AntText>
-          </div>
-        </div>
-      </div>
+              <div className="ticket-info-section">
+                <div className="info-row">
+                  <div className="info-left">
+                    <AntText>航司记录编号 AIR BOOKING REF: </AntText>
+                    <AntText strong>{singleData.airlineRecordLocator}</AntText>
+                  </div>
+                  <div className="info-right">
+                    <AntText>订座记录编号 BOOKING REF: </AntText>
+                    <AntText strong>{singleData.bookingRef}</AntText>
+                  </div>
+                </div>
+
+                <div className="info-row">
+                  <div className="info-left">
+                    <AntText>旅客姓名 NAME: </AntText>
+                    <AntText strong>
+                      {formatPassengerName(singleData.passengerName)}
+                    </AntText>
+                  </div>
+                  <div className="info-right">
+                    {singleData.eticketNbr?.includes("\n") ? (
+                      <>
+                        <AntText>票号 ETKT NBR: </AntText>
+                        {singleData.eticketNbr.split("\n").map((ticket, idx) => (
+                          <div key={idx}>
+                            <AntText strong>{ticket}</AntText>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <AntText>票号 ETKT NBR: </AntText>
+                        <AntText strong>{singleData.eticketNbr}</AntText>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="info-row">
+                  <div className="info-left">
+                    <AntText>旅行证件号码 ID NUMBER: </AntText>
+                    <AntText strong>{singleData.idNumber}</AntText>
+                  </div>
+                  <div className="info-right">
+                    <AntText>联票 CONJ NBR: </AntText>
+                    <AntText strong>{singleData.conjNbr}</AntText>
+                  </div>
+                </div>
+
+                <div className="info-row">
+                  <div className="info-left">
+                    <AntText>出票航空公司 ISSUING AIRLINE: </AntText>
+                    {singleData.issuingAirline?.split("\n").map((airline, idx) => (
+                      <div key={idx} className="airline-text">
+                        <AntText strong>{airline}</AntText>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="info-right">
+                    <AntText>出票时间 DATE OF ISSUE: </AntText>
+                    <AntText strong>{singleData.dateOfIssue}</AntText>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flight-table">
+                <div className="table-header">
+                  <div className="col-origin">
+                    始发地/目的地
+                    <br />
+                    ORIGIN/DES
+                  </div>
+                  <div className="col-flight">
+                    航班号
+                    <br />
+                    FLIGHT
+                  </div>
+                  <div className="col-class">
+                    舱位
+                    <br />
+                    CLASS
+                  </div>
+                  <div className="col-date">
+                    日期
+                    <br />
+                    DATE
+                  </div>
+                  <div className="col-deptime">
+                    起飞时间
+                    <br />
+                    DEPTIME
+                  </div>
+                  <div className="col-arrtime">
+                    到达时间
+                    <br />
+                    ARRTIME
+                  </div>
+                  <div className="col-baggage">
+                    托运行李
+                    <br />
+                    BAGGAGE
+                  </div>
+                  <div className="col-terminal">
+                    航站楼
+                    <br />
+                    TERMINAL
+                  </div>
+                </div>
+
+                {singleData.segments &&
+                  singleData.segments.length > 0 &&
+                  singleData.segments.map((segment, index) => (
+                    <div key={index} className="table-row">
+                      <div className="col-origin">
+                        {segment.origin &&
+                          formatAirportCode(segment.origin)
+                            ?.split("\n")
+                            .map((line, lineIndex) => (
+                              <div key={`origin-${index}-${lineIndex}`}>{line}</div>
+                            ))}
+                        {formatAirportCode(segment.destination || "")
+                          ?.split("\n")
+                          .map((line, lineIndex) => (
+                            <div key={`dest-${index}-${lineIndex}`}>{line}</div>
+                          ))}
+                      </div>
+                      <div className="col-flight">{segment.flightNumber || ""}</div>
+                      <div className="col-class">
+                        <div>
+                          {classMapping[segment.flightClass]?.chinese ||
+                            segment.flightClass ||
+                            ""}
+                        </div>
+                        <div>
+                          {classMapping[segment.flightClass]?.english ||
+                            segment.flightClass ||
+                            ""}
+                        </div>
+                      </div>
+                      <div className="col-date">
+                        <div>{segment.date?.split("\n")[0] || ""}</div>
+                        <div>{segment.date?.split("\n")[1] || ""}</div>
+                      </div>
+                      <div className="col-deptime">{segment.depTime || ""}</div>
+                      <div className="col-arrtime">{segment.arrTime || ""}</div>
+                      <div className="col-baggage">{segment.baggage || ""}</div>
+                      <div className="col-terminal">
+                        {segment.terminal1 || "-"} {segment.terminal2 || "-"}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              <div className="notice-section">
+                <Title className="notice-item" level={4}>
+                  须知 NOTICE:
+                </Title>
+                <div className="notice-item">
+                  <AntText>· 请您再次核对航班信息；</AntText>
+                  <br />
+                  <AntText>Please check the flight information again;</AntText>
+                </div>
+                <div className="notice-item">
+                  <AntText>· 联程客票须按顺序使用，不得跳段使用；</AntText>
+                  <br />
+                  <AntText>
+                    The connecting ticket shall be used in sequence and shall not be
+                    used in skip section;
+                  </AntText>
+                </div>
+                <div className="notice-item">
+                  <AntText>· 请确认您的护照有效期至少在半年以上；</AntText>
+                  <br />
+                  <AntText>
+                    Please confirm that your passport is valid for at least half a
+                    year;
+                  </AntText>
+                </div>
+                <div className="notice-item">
+                  <AntText>
+                    · 国际航班请您至少在航班起飞前3小时到达机场，并且办理乘机手续；
+                  </AntText>
+                  <br />
+                  <AntText>
+                    For international flights, please arrive at the airport at least 3
+                    hours before departure and check in;
+                  </AntText>
+                </div>
+              </div>
+            </div>
+          </React.Fragment>
+        ))}
+      </>
     );
   };
 
-  // const dateFormat = "YYYY-MM-DD";
+  const dateFormat = "YYYY-MM-DD";
 
   return (
     <div className="eticket-generator">
@@ -875,31 +908,72 @@ const ETicketGenerator: React.FC = () => {
           layout="vertical"
           onFinish={onFinish}
           // initialValues={{
-          //   airlineRecordLocator: "HT6E3T",
-          //   bookingRef: "HT6E3T",
-          //   passengerName: "张三",
-          //   eticketNumbers: ["9892958691523"],
-          //   issuingAirlines: ["江西航空"],
-          //   dateOfIssue: dayjs("2019-09-03", dateFormat),
-          //   segments: [
+          //   itineraries: [
           //     {
-          //       origin: "北京首都 PEK-BEIJING",
-          //       destination: "上海虹桥 SHA-SHANGHAI",
-          //       flightNumber: "CA1231",
-          //       flightClass: "Y",
-          //       date: dayjs("2025-10-01", dateFormat),
-          //       depTime: dayjs("12:08", "HH:mm"),
-          //       arrTime: dayjs("14:30", "HH:mm"),
-          //       baggage: "20KG",
+          //       airlineRecordLocator: "HT6E3T",
+          //       bookingRef: "HT6E3T",
+          //       passengerName: "张三",
+          //       eticketNumbers: ["9892958691523"],
+          //       issuingAirlines: ["江西航空"],
+          //       dateOfIssue: dayjs("2019-09-03", dateFormat),
+          //       segments: [
+          //         {
+          //           origin: "北京首都 PEK-BEIJING",
+          //           destination: "上海虹桥 SHA-SHANGHAI",
+          //           flightNumber: "CA1231",
+          //           flightClass: "Y",
+          //           date: dayjs("2025-10-01", dateFormat),
+          //           depTime: dayjs("12:08", "HH:mm"),
+          //           arrTime: dayjs("14:30", "HH:mm"),
+          //           baggage: "20KG",
+          //         },
+          //       ],
           //     },
           //   ],
           // }}
         >
+          <Form.List name="itineraries">
+            {(itineraryFields, { add: addItinerary, remove: removeItinerary }) => (
+              <>
+                {itineraryFields.length === 0 && (
+                  <div
+                    style={{
+                      width: 1000,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px dashed #d9d9d9",
+                      borderRadius: 8,
+                      marginBottom: 16,
+                      color: "#bfbfbf",
+                      padding: "40px 0",
+                    }}
+                  >
+                    暂无行程，请点击下方按钮添加
+                  </div>
+                )}
+                {itineraryFields.map(({ key: itKey, name: itName }) => (
+                  <Card
+                    key={itKey}
+                    title={`行程 ${itName + 1}`}
+                    style={{ marginBottom: 16, width: 1000 }}
+                    extra={
+                      itineraryFields.length > 1 ? (
+                        <Button
+                          danger
+                          size="small"
+                          onClick={() => removeItinerary(itName)}
+                        >
+                          删除行程
+                        </Button>
+                      ) : null
+                    }
+                  >
           {/* 表单字段网格布局 */}
           <div className="form-grid">
             <Form.Item
               label="航司记录编号"
-              name="airlineRecordLocator"
+              name={[itName, "airlineRecordLocator"]}
               rules={[{ required: true, message: "请输入航司记录编号" }]}
             >
               <Input
@@ -911,7 +985,7 @@ const ETicketGenerator: React.FC = () => {
 
             <Form.Item
               label="订座记录编号"
-              name="bookingRef"
+              name={[itName, "bookingRef"]}
               rules={[{ required: true, message: "请输入订座记录编号" }]}
             >
               <Input
@@ -923,7 +997,7 @@ const ETicketGenerator: React.FC = () => {
 
             <Form.Item
               label="旅客姓名"
-              name="passengerName"
+              name={[itName, "passengerName"]}
               rules={[{ required: true, message: "请输入旅客姓名" }]}
             >
               <Input placeholder="例: ZHANG SAN 或 张三" />
@@ -931,13 +1005,13 @@ const ETicketGenerator: React.FC = () => {
 
             <Form.Item
               label="证件号码"
-              name="idNumber"
+              name={[itName, "idNumber"]}
               rules={[{ message: "请输入证件号码" }]}
             >
               <Input placeholder="证件号码" />
             </Form.Item>
 
-            <Form.Item label="联票号" name="conjNbr">
+            <Form.Item label="联票号" name={[itName, "conjNbr"]}>
               <Input placeholder="联票号（可选）" />
             </Form.Item>
           </div>
@@ -945,7 +1019,7 @@ const ETicketGenerator: React.FC = () => {
           {/* 电子客票号动态列表 */}
           <Divider orientation="left">电子客票号</Divider>
           <Form.List
-            name="eticketNumbers"
+            name={[itName, "eticketNumbers"]}
             initialValue={[""]}
             rules={[
               {
@@ -983,10 +1057,10 @@ const ETicketGenerator: React.FC = () => {
                             style={{ width: "100%" }}
                             onBlur={(e) => {
                               const trimmedValue = e.target.value.trim();
-                              const newValues =
-                                form.getFieldValue("eticketNumbers");
-                              newValues[field.name] = trimmedValue;
-                              form.setFieldValue("eticketNumbers", newValues);
+                              const itineraries =
+                                form.getFieldValue("itineraries");
+                              itineraries[itName].eticketNumbers[field.name] = trimmedValue;
+                              form.setFieldValue("itineraries", itineraries);
                             }}
                           />
                         </Form.Item>
@@ -1000,13 +1074,6 @@ const ETicketGenerator: React.FC = () => {
                   ))}
                 </div>
                 <Form.Item>
-                  <Button
-                    type="link"
-                    onClick={() => add()}
-                    style={{ paddingLeft: 0 }}
-                  >
-                    + 添加票号
-                  </Button>
                   <Form.ErrorList errors={errors} />
                 </Form.Item>
               </>
@@ -1016,7 +1083,7 @@ const ETicketGenerator: React.FC = () => {
           {/* 出票航空公司动态列表 */}
           <Divider orientation="left">出票航空公司</Divider>
           <Form.List
-            name="issuingAirlines"
+            name={[itName, "issuingAirlines"]}
             initialValue={[undefined]}
             rules={[
               {
@@ -1070,13 +1137,6 @@ const ETicketGenerator: React.FC = () => {
                   ))}
                 </div>
                 <Form.Item>
-                  <Button
-                    type="link"
-                    onClick={() => add()}
-                    style={{ paddingLeft: 0 }}
-                  >
-                    + 添加航空公司
-                  </Button>
                   <Form.ErrorList errors={errors} />
                 </Form.Item>
               </>
@@ -1086,7 +1146,7 @@ const ETicketGenerator: React.FC = () => {
           <div className="form-grid">
             <Form.Item
               label="出票日期"
-              name="dateOfIssue"
+              name={[itName, "dateOfIssue"]}
               rules={[{ required: true, message: "请选择出票日期" }]}
             >
               <DatePicker style={{ width: "100%" }} />
@@ -1097,7 +1157,7 @@ const ETicketGenerator: React.FC = () => {
           <Divider orientation="left">航班行程信息</Divider>
 
           {/* 动态航段列表：支持多航段添加和删除 */}
-          <Form.List name="segments" initialValue={[{}]}>
+          <Form.List name={[itName, "segments"]} initialValue={[{}]}>
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }, index) => (
@@ -1253,9 +1313,27 @@ const ETicketGenerator: React.FC = () => {
                     </div>
                   </Card>
                 ))}
+              </>
+            )}
+          </Form.List>
+                  </Card>
+                ))}
                 <Form.Item>
-                  <Button type="dashed" onClick={() => add()} block>
-                    添加航段
+                  <Button
+                    type="dashed"
+                    onClick={() =>
+                      addItinerary({
+                        airlineRecordLocator: "",
+                        bookingRef: "",
+                        passengerName: "",
+                        eticketNumbers: [""],
+                        issuingAirlines: [undefined],
+                        segments: [{}],
+                      })
+                    }
+                    block
+                  >
+                    + 添加行程
                   </Button>
                 </Form.Item>
               </>
@@ -1275,7 +1353,8 @@ const ETicketGenerator: React.FC = () => {
                   </Button>
                   {flightData && (
                     <PDFDownloadLink
-                      document={<ETicketPDF flightData={flightData} />}
+                      key={pdfKey}
+                      document={<ETicketPDF flightDataList={flightData} />}
                       fileName={generatePDFFileName(flightData)}
                       style={{ textDecoration: "none" }}
                     >
@@ -1283,8 +1362,15 @@ const ETicketGenerator: React.FC = () => {
                         if (error) {
                           console.error("PDF生成错误:", error);
                           return (
-                            <Button type="default" danger>
-                              PDF生成失败
+                            <Button
+                              type="default"
+                              danger
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPdfKey((k) => k + 1);
+                              }}
+                            >
+                              PDF生成失败，点击重试
                             </Button>
                           );
                         }
