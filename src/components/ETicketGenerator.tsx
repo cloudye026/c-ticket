@@ -32,7 +32,7 @@ import {
 } from "../data/flightConstants";
 import { airlineMapping, airlineOptions } from "../data/airlineData";
 import { flatAirportOptions, type AirportOption } from "../data/airportData";
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 
 // 使用本地思源黑体字体
 Font.register({
@@ -895,7 +895,7 @@ const ETicketGenerator: React.FC = () => {
     );
   };
 
-  const dateFormat = "YYYY-MM-DD";
+  // const dateFormat = "YYYY-MM-DD";
 
   return (
     <div className="eticket-generator">
