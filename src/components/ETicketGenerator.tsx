@@ -121,21 +121,19 @@ const generatePDFFileName = (flightDataList: FormattedFlightData[]): string => {
       ? `${lastDateMatch[1]}${lastDateMatch[2]}`
       : "";
 
-    // 构建去重路线：相邻航段目的地与下一航段出发地相同时合并
-    const codes: string[] = [
-      allSegments[0].origin?.match(/([A-Z]{3})-/)?.[1] || "",
-    ];
+    // 构建完整路线：相邻航段目的地与下一航段出发地相同时合并，不同时保留
+    const routeParts: string[] = [];
     for (const seg of allSegments) {
-      const dest = seg.destination?.match(/([A-Z]{3})-/)?.[1] || "";
-      const origin = seg.origin?.match(/([A-Z]{3})-/)?.[1] || "";
-      if (origin && origin !== codes[codes.length - 1]) {
-        codes.push(origin);
+      const originCode = seg.origin?.match(/([A-Z]{3})-/)?.[1] || "";
+      const destCode = seg.destination?.match(/([A-Z]{3})-/)?.[1] || "";
+      if (originCode && originCode !== routeParts[routeParts.length - 1]) {
+        routeParts.push(originCode);
       }
-      if (dest) {
-        codes.push(dest);
+      if (destCode) {
+        routeParts.push(destCode);
       }
     }
-    const route = codes.filter(Boolean).join("-");
+    const route = routeParts.join("-");
     return `${firstDate}-${lastDate} ${route} ${passengerName}-电子客票行程单.pdf`;
   }
 
@@ -662,6 +660,7 @@ const ETicketGenerator: React.FC = () => {
       );
       setFlightData(formattedList);
       setShowTicket(true);
+      setPdfKey((k) => k + 1);
     } catch (error) {
       console.error("生成客票时出错:", error);
     }
