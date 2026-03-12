@@ -1030,7 +1030,7 @@ const ETicketGenerator: React.FC = () => {
               },
             ]}
           >
-            {(fields, { add, remove }, { errors }) => (
+            {(fields, { add: _add, remove }, { errors }) => (
               <>
                 <div className="form-grid">
                   {fields.map((field, index) => (
@@ -1096,7 +1096,7 @@ const ETicketGenerator: React.FC = () => {
               },
             ]}
           >
-            {(fields, { add, remove }, { errors }) => (
+            {(fields, { add: _add, remove }, { errors }) => (
               <>
                 <div className="form-grid">
                   {fields.map((field, index) => (
@@ -1157,7 +1157,7 @@ const ETicketGenerator: React.FC = () => {
 
           {/* 动态航段列表：支持多航段添加和删除 */}
           <Form.List name={[itName, "segments"]} initialValue={[{}]}>
-            {(fields, { add, remove }) => (
+            {(fields, { add: _add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }, index) => (
                   <Card key={key} size="small" style={{ marginBottom: 16 }}>
